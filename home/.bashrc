@@ -36,4 +36,4 @@ fzg() {
         --bind "enter:execute(echo {1}:{2} | xargs -o \$EDITOR)"
 }
 export DATABASE_PASSWORD="pat"
-# export PATH="/home/pat/.local/share/gem/ruby/3.4.0/bin:$PATH"
+export PATH="/home/pat/my_scripts:$PATH"
