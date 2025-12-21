@@ -2,7 +2,7 @@
 Type=Application
 Name=Pacman Installed Dump
 Comment=Dumps a list of all user installed packages into a file
-Exec=/home/pat/my_scripts/pacman_installed_dump.sh
+Exec=bash /home/pat/my_scripts/pacman_installed_dump.sh
 # Directory to run in (optional)
 Path=/home/pat/my_scripts/
 Icon=utilities-terminal

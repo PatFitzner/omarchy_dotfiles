@@ -1,4 +1,4 @@
-Dump at Sat Dec 20 12:32:57 PM CET 2025
+Dump at Sun Dec 21 09:51:22 AM CET 2025
 ------------------------------------
 aether
 alacritty
@@ -23,6 +23,7 @@ cups
 cups-browsed
 cups-filters
 cups-pdf
+dex
 docker
 docker-buildx
 docker-compose
@@ -133,6 +134,7 @@ nvidia-open-dkms
 nvidia-utils
 obs-studio
 obsidian
+okular
 omarchy-chromium
 omarchy-keyring
 omarchy-nvim
