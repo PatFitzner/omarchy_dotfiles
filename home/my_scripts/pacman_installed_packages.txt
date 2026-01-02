@@ -1,4 +1,4 @@
-Dump at Sun Dec 21 09:51:22 AM CET 2025
+Dump at Fri Jan  2 10:18:19 AM CET 2026
 ------------------------------------
 aether
 alacritty
@@ -9,6 +9,7 @@ base-devel
 bash-completion
 bat
 bind
+binder_linux-dkms
 bless
 blueman
 bluetui
@@ -199,10 +200,13 @@ ufw-docker
 unzip
 usage
 uwsm
+virtualbox
 visual-studio-code-bin
 vlc
 walker
 waybar
+waydroid
+waydroid-image-gapps
 wayfreeze
 wev
 wget

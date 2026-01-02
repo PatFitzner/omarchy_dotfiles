@@ -37,3 +37,9 @@ fzg() {
 }
 export DATABASE_PASSWORD="pat"
 export PATH="/home/pat/my_scripts:$PATH"
+
+# Created by `pipx` on 2026-01-02 23:58:04
+export PATH="$PATH:/home/pat/.local/bin"
+
+eval "$(register-python-argcomplete pipx)"
+
