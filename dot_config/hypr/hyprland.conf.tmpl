@@ -67,6 +67,17 @@ windowrule {
   animation = slide top
 }
 
+# Telegram Desktop dropdown
+windowrule {
+  name = telegram-dropdown
+  match:initial_class = ^(org\.telegram\.desktop)$
+  float = on
+  size = 90% 70%
+  move = 5% 15%
+  workspace = special:telegram silent
+  animation = slide top
+}
+
 # KeePassXC dropdown (SUPER+P)
 windowrule {
   name = keepassxc-dropdown
@@ -80,3 +91,6 @@ windowrule {
 workspace = special:keepassxc, on-created-empty:uwsm app -- keepassxc
 
 animation = specialWorkspace, 1, 1, default, fade
+
+# Toggle config flags dynamically
+source = ~/.local/state/omarchy/toggles/hypr/*.conf
