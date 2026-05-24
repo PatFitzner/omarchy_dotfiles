@@ -248,3 +248,11 @@ tooltip {
   color: #ff5555;
   background: rgba(255, 85, 85, 0.1);
 }
+
+#custom-monitor-hotplug.on {
+  color: @accent;
+}
+
+#custom-monitor-hotplug.off {
+  color: @muted;
+}

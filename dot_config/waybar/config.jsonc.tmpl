@@ -37,6 +37,7 @@
     {{- end }}
     {{- if $host.waybar.headset.impl }}
     "custom/headset-battery",
+    "custom/monitor-hotplug",
     {{- end }}
     "battery"
   ],
@@ -290,6 +291,13 @@
     "tooltip": true,
     "on-click": "pkill -RTMIN+10 waybar",
     "signal": 10
+  },
+  "custom/monitor-hotplug": {
+    "exec": "~/.config/hypr/scripts/monitor-hotplug-waybar.sh",
+    "return-type": "json",
+    "interval": 5,
+    "on-click": "if systemctl --user is-active --quiet monitor-hotplug.service; then systemctl --user stop monitor-hotplug.service; else systemctl --user start monitor-hotplug.service; fi",
+    "tooltip": true
   },
   {{- end }}
   "tray": {

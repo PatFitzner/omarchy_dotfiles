@@ -1,6 +1,13 @@
 #!/bin/bash
 
 hyprctl dispatch exec firefox
-hyprctl dispatch exec whatsapp-desktop-linux
-hyprctl dispatch exec telegram-desktop
+hyprctl dispatch exec -- omarchy-launch-webapp https://web.whatsapp.com/
+hyprctl dispatch exec Telegram
 hyprctl dispatch exec thunderbird
+
+sleep 5
+
+hyprctl dispatch movetoworkspacesilent 1 class:firefox
+hyprctl dispatch movetoworkspacesilent 2 class:org.telegram.desktop
+hyprctl dispatch movetoworkspacesilent 2 class:chrome-web.whatsapp.com__-Default
+hyprctl dispatch movetoworkspacesilent 5 class:org.mozilla.Thunderbird
