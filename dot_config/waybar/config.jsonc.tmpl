@@ -12,11 +12,8 @@
     "custom/omarchy",
     "hyprland/workspaces",
     "mpris",
-    "custom/claude-chat",
-    "custom/claude-usage",
-    {{- if $host.waybar.opencode_usage }}
+    "custom/opencode-chat",
     "custom/opencode-usage",
-    {{- end }}
     "cpu#left",
     "memory",
   ],
@@ -202,13 +199,13 @@
     "on-click-right": "omarchy-voxtype-config",
     "on-click": "omarchy-voxtype-model"
   },
-  "custom/claude-chat": {
+  "custom/opencode-chat": {
     "format": "\udb81\ude96",
-    "on-click": "toggle-claude-dropdown",
-    "tooltip-format": "Claude Code dropdown\n\nSuper + C"
+    "on-click": "toggle-opencode-dropdown",
+    "tooltip-format": "OpenCode dropdown\n\nSuper + C"
   },
-  "custom/claude-usage": {
-    "exec": "~/.local/bin/claude-usage --waybar --browser chrome",
+  "custom/opencode-usage": {
+    "exec": "~/.local/bin/opencode-usage --waybar",
     "return-type": "json",
     "interval": 120,
     "format": "{}",
@@ -282,16 +279,6 @@
     "tooltip": true
   },
   {{- end }}
-  {{- if $host.waybar.opencode_usage }}
-  "custom/opencode-usage": {
-    "exec": "~/.local/bin/opencode-usage --waybar",
-    "return-type": "json",
-    "interval": 120,
-    "format": "{}",
-    "tooltip": true,
-    "on-click": "pkill -RTMIN+10 waybar",
-    "signal": 10
-  },
   "custom/monitor-hotplug": {
     "exec": "~/.config/hypr/scripts/monitor-hotplug-waybar.sh",
     "return-type": "json",
@@ -299,7 +286,6 @@
     "on-click": "if systemctl --user is-active --quiet monitor-hotplug.service; then systemctl --user stop monitor-hotplug.service; else systemctl --user start monitor-hotplug.service; fi",
     "tooltip": true
   },
-  {{- end }}
   "tray": {
     "icon-size": 12,
     "spacing": 17
