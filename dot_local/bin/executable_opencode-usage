@@ -12,7 +12,6 @@ import json
 import re
 import sys
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 import browser_cookie3
@@ -23,7 +22,7 @@ from curl_cffi import requests
 OPENCODE_DOMAIN = "opencode.ai"
 FIREFOX_COOKIE_FILE = Path.home() / ".config/mozilla/firefox/tgahoqgl.default-release/cookies.sqlite"
 WORKSPACE_ID = "wrk_01KK4N3ACDFWSNYVQ2KW88PZQ8"
-BILLING_URL = f"https://opencode.ai/workspace/{WORKSPACE_ID}/billing"
+BILLING_URL = f"https://opencode.ai/workspace/{WORKSPACE_ID}/go"
 
 CACHE_DIR = Path.home() / ".cache" / "waybar-ai-usage"
 CACHE_FILE = CACHE_DIR / "opencode-go.json"
@@ -49,58 +48,26 @@ def load_cookies() -> dict:
 
 
 def parse_usage_from_html(html: str) -> dict:
-    """Parse lite subscription usage data from the billing page HTML."""
-    # New format: balance:1500000000,reload:!0,reloadAmount:10,...,monthlyLimit:25,monthlyUsage:0,timeMonthlyUsageUpdated:$R[24]=new Date("2026-03-29T00:57:37.000Z")
-    m = re.search(
-        r'balance:(\d+),.*?monthlyLimit:(\d+),monthlyUsage:(\d+),timeMonthlyUsageUpdated:\$R\[\d+\]=new Date\("([^"]+)"\)',
-        html,
-    )
-    if not m:
+    """Parse Go subscription usage data from the /go page HTML."""
+    # Pattern: rollingUsage:$R[35]={status:"ok",resetInSec:11508,usagePercent:7}
+    result = {}
+
+    for window in ("rollingUsage", "weeklyUsage", "monthlyUsage"):
         m = re.search(
-            r'balance:(\d+),.*?monthlyLimit:(\d+),monthlyUsage:(\d+)',
+            rf'{window}:\$R\[\d+\]=\{{status:"(\w+)",resetInSec:(\d+),usagePercent:(\d+)\}}',
             html,
         )
-    if not m:
-        raise RuntimeError("Could not parse usage data from billing page")
+        if m:
+            result[window] = {
+                "status": m.group(1),
+                "reset_in_sec": int(m.group(2)),
+                "usage_percent": int(m.group(3)),
+            }
 
-    balance_raw = int(m.group(1))
-    monthly_limit = int(m.group(2))
-    monthly_usage = int(m.group(3))
+    if not result:
+        raise RuntimeError("Could not parse usage data from Go page")
 
-    # Balance is in nanodollars (1e-9), convert to dollars
-    balance_usd = balance_raw / 100_000_000
-
-    # Monthly usage is in dollars, calculate percentage
-    usage_pct = round(monthly_usage / monthly_limit * 100) if monthly_limit > 0 else 0
-
-    # Parse timeMonthlyUsageUpdated if available
-    time_updated = None
-    if len(m.groups()) >= 4:
-        try:
-            time_updated = datetime.fromisoformat(m.group(4).replace("Z", "+00:00"))
-        except ValueError:
-            pass
-
-    # Calculate seconds until monthly reset (1st of next month)
-    now = datetime.now(timezone.utc)
-    if time_updated:
-        # Reset is on the 1st of the next month
-        if now.month == 12:
-            next_reset = datetime(now.year + 1, 1, 1, tzinfo=timezone.utc)
-        else:
-            next_reset = datetime(now.year, now.month + 1, 1, tzinfo=timezone.utc)
-        reset_in_sec = int((next_reset - now).total_seconds())
-    else:
-        reset_in_sec = 0
-
-    return {
-        "balance_usd": balance_usd,
-        "monthly_limit": monthly_limit,
-        "monthly_usage": monthly_usage,
-        "usage_percent": usage_pct,
-        "reset_in_sec": reset_in_sec,
-        "time_updated": time_updated.isoformat() if time_updated else None,
-    }
+    return result
 
 
 def fetch_usage_uncached() -> dict:
@@ -182,23 +149,37 @@ def usage_class(pct: int) -> str:
 
 def print_waybar(data: dict) -> None:
     """Output JSON for Waybar custom module."""
-    pct = data.get("usage_percent", 0)
-    reset = format_reset(data.get("reset_in_sec", 0))
-    balance = data.get("balance_usd", 0)
-    monthly_usage = data.get("monthly_usage", 0)
-    monthly_limit = data.get("monthly_limit", 0)
+    rolling = data.get("rollingUsage", {})
+    weekly = data.get("weeklyUsage", {})
+    monthly = data.get("monthlyUsage", {})
 
-    cls = usage_class(pct)
-    col = usage_color(pct)
+    r_pct = rolling.get("usage_percent", 0)
+    w_pct = weekly.get("usage_percent", 0)
+    m_pct = monthly.get("usage_percent", 0)
 
-    text = f"<span foreground='{col}'>{pct}%</span>"
+    active_pct = max(r_pct, w_pct, m_pct)
+
+    r_reset = format_reset(rolling.get("reset_in_sec", 0))
+    w_reset = format_reset(weekly.get("reset_in_sec", 0))
+    m_reset = format_reset(monthly.get("reset_in_sec", 0))
+
+    cls = usage_class(active_pct)
+
+    r_col = usage_color(r_pct)
+    w_col = usage_color(w_pct)
+    m_col = usage_color(m_pct)
+    text = (
+        f"<span foreground='{r_col}'>{r_pct}%</span>"
+        f" - <span foreground='{w_col}'>{w_pct}%</span>"
+        f" - <span foreground='{m_col}'>{m_pct}%</span>"
+    )
 
     tooltip = (
         f"OpenCode Go Usage\n"
         f"━━━━━━━━━━━━━━━━━━\n"
-        f"Balance:    ${balance:.2f}\n"
-        f"Monthly:    ${monthly_usage:.2f} / ${monthly_limit:.2f} ({pct}%)\n"
-        f"Resets in:  {reset}\n"
+        f"Rolling:  {r_pct}%  ⏱ {r_reset}\n"
+        f"Weekly:   {w_pct}%  ⏱ {w_reset}\n"
+        f"Monthly:  {m_pct}%  ⏱ {m_reset}\n"
         f"\n"
         f"Click to refresh"
     )
@@ -207,21 +188,18 @@ def print_waybar(data: dict) -> None:
         "text": text,
         "tooltip": tooltip,
         "class": cls,
-        "alt": f"{pct}%",
+        "alt": f"{active_pct}%",
     }))
 
 
 def print_cli(data: dict) -> None:
     """Print usage to terminal."""
-    pct = data.get("usage_percent", 0)
-    reset = format_reset(data.get("reset_in_sec", 0))
-    balance = data.get("balance_usd", 0)
-    monthly_usage = data.get("monthly_usage", 0)
-    monthly_limit = data.get("monthly_limit", 0)
-
-    print(f"  Balance:  ${balance:.2f}")
-    print(f"  Monthly:  ${monthly_usage:.2f} / ${monthly_limit:.2f} ({pct}%)")
-    print(f"  Resets:   {reset}")
+    for window in ("rollingUsage", "weeklyUsage", "monthlyUsage"):
+        d = data.get(window, {})
+        label = window.replace("Usage", "")
+        pct = d.get("usage_percent", 0)
+        reset = format_reset(d.get("reset_in_sec", 0))
+        print(f"  {label:>8}: {pct}% (resets in {reset})")
 
 
 # ==================== Entry Point ====================
